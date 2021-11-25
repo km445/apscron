@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block navbar %}{% endblock %}
+{% block content %}
+
+<b-row class="vh-100" align-v="center" align-h="center">
+    <b-col md="6">
+        <b-form method="POST">
+            <div class="text-center">
+                <b-img src="{{ static('/static/img/logo.svg') }}" fluid alt="Logo"></b-img>
+            </div>
+            <b-form-group label="Username:" label-for="login-email">
+                <b-form-input v-model="username" id="login-username" type="text" placeholder="Enter username" required></b-form-input>
+            </b-form-group>
+            <b-form-group label="Password:" label-for="login-password">
+                <b-form-input v-model="password" id="login-password" type="password" placeholder="Enter password" required></b-form-input>
+            </b-form-group>
+            <b-form-group>
+                <b-form-checkbox v-model="keepLoggedIn" id="login-keep-logged-in" switch inline>Keep logged in</b-form-checkbox>
+            </b-form-group>
+            <div class="text-center">
+                <b-button @click="submit" :disabled="isSubmitDisabled" type="button" variant="primary">Login</b-button>
+            </div>
+        </b-form>
+    </b-col>
+</b-row>
+
+{% endblock %}
+
+{% block mixins %}
+{{ super() }}
+{% endblock %}
+
+{% block javascript %}
+<script type="text/javascript">
+    var app = new Vue({
+        el: "#app",
+        data() {
+            return {
+                isSubmitDisabled: false,
+                username: null,
+                password: null,
+                keepLoggedIn: false
+            }  
+        },
+        methods: {
+            submit() {
+                this.isSubmitDisabled = true;
+                if(!this.username || !this.password) {
+                    this.showMessage("Enter valid username and password", "danger", "Error");
+                    this.isSubmitDisabled = false;
+                    return
+                };
+                axios.post(
+                    "/auth/login",
+                    {"username": this.username, "password": this.password, "keep_logged_in": this.keepLoggedIn}
+                ).then(
+                    response => {
+                        setTimeout(() => {window.location = "/front/jobs"}, 1000);
+                    }
+                ).catch(
+                    e => {
+                        this.isSubmitDisabled = false;
+                        console.log(e)
+                    }
+                )
+            }
+        }
+    });
+</script>
+{% endblock %}

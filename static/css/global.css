@@ -1,0 +1,20 @@
+.multiselect__single {
+    font-family: sans-serif;
+    font-size: medium;
+}
+
+.multiselect__tags{
+    max-height: 42px;
+    overflow: hidden;
+}
+
+.filter-input {
+    font-family: sans-serif;
+    font-size: medium;
+    min-height: 42px;
+}
+
+.field-input{
+    font-family: sans-serif !important;
+    font-size: medium !important;
+}

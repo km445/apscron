@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block title %} Error {% endblock title %}
+
+{% block content %}
+                <div class="col-md-12 text-center">
+                    <br>
+                    <h1>Error</h1>
+                    {% if session_data.get("message") %}
+                    <p>{{ session_data.get("message") }}</p>
+                    {% else %}
+                    <p>Something went wrong</p>
+                    {% endif %}
+                </div>
+{% endblock content %}
+{% block javascript %}
+{{ super() }}
+<script type="text/javascript">
+    var app = new Vue({
+        el: "#app",
+        data: {
+
+        },
+    });
+</script>
+{% endblock %}

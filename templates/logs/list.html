@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Log list{% endblock %}
+{% block content %}
+
+<b-row align-h="center" class="mt-3">
+    <b-col>
+        <h5 class="text-center" v-text="logTitle"></h5>
+        <filter-component :filters="filters" v-on:get-items-with-filters="getItemsWithFilters"> </filter-component>
+        <b-pagination
+            @change="goToPage"
+            v-model="pagination.page"
+            :total-rows="pagination.total_items"
+            :per-page="pagination.per_page"
+        ></b-pagination>
+        <template>
+            <div>
+                <vue-json-pretty :data="logs"> </vue-json-pretty>
+            </div>
+        </template>
+    </b-col>
+</b-row>
+
+{% endblock %}
+
+{% block mixins %}{% endblock %}
+
+{% block javascript %}
+{{ super() }}
+<script type="text/javascript">
+    var app = new Vue({
+        el: "#app",
+        components: {
+            Multiselect: window.VueMultiselect.default
+        },
+        data() {
+            return {
+                logTitle: "",
+                logs: [],
+                filters: {},
+                pagination: {},
+                logsApiUrl: "",
+            }
+        },
+        created() {
+            const requestPath = {{ request.path|tojson }};
+            let apiUrl = "";
+            switch (requestPath) {
+                case this.$frontRoutes.jobLogView:
+                    apiUrl = this.$apiRoutes.jobLogView;
+                    break;
+                case this.$frontRoutes.userLogView:
+                    apiUrl = this.$apiRoutes.userLogView;
+                    break;
+                case this.$frontRoutes.errorLogView:
+                    apiUrl = this.$apiRoutes.errorLogView;
+                    break;
+                }
+
+            if(!apiUrl) {
+                this.showMessage("Invalid API log URL", "danger", "Error");
+                return
+            }
+            axios.get(apiUrl).then(
+                response => {
+                    this.logTitle = response.data.data.log_title;
+                    this.logs = response.data.data.items;
+                    this.filters = response.data.data.filters;
+                    this.logsApiUrl = apiUrl;
+                    this.pagination = response.data.data.pagination;
+                }
+            );
+        },
+        methods: {
+            async goToPage(pageNumber) {
+                let filters = this.getAdaptedFilters(this.filters);
+                axios.get(
+                    this.logsApiUrl, {params: {"page": pageNumber, ...filters}}
+                ).then(
+                    response => {
+                        let data = response.data;
+                        this.logs = data.data.items;
+                        this.pagination = data.data.pagination;
+                    }
+                )
+            },
+            async getItemsWithFilters(filters) {
+                let adaptedFilters = this.getAdaptedFilters(filters);
+                this.pagination.page = 1;
+                axios.get(
+                    this.logsApiUrl, {params: {"page": this.pagination.page, ...adaptedFilters}}
+                ).then(
+                    response => {
+                        let data = response.data;
+                        this.logs = data.data.items;
+                        this.pagination = data.data.pagination;
+                    }
+                );
+            },
+        },
+    });
+</script>
+{% endblock %}
