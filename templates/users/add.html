@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Add user{% endblock %}
+{% block content %}
+
+<b-row align-h="center" class="mt-3">
+    <b-col lg="10">
+        <user-form :user="user"
+                   :permissions="permissions"
+                   :cancel-to="userListLink"
+                   :is-update="isUpdate">
+    </b-col>
+</b-row>
+
+{% endblock %}
+
+{% block mixins %}{% endblock %}
+
+{% block javascript %}
+{{ super() }}
+<script type="text/javascript">
+    var app = new Vue({
+        el: "#app",
+        data() {
+            return {
+                permissions: [],
+                user: {
+                    username: null,
+                    password: null,
+                    ip_list: JSON.stringify([]),
+                    gauth: null,
+                    permissions: [],
+                    is_admin: false,
+                    is_active: false
+                },
+                userListLink: this.$frontRoutes.usersView,
+                isUpdate: false,
+            }
+        },
+        created() {
+            axios.get(this.$apiRoutes.userCommonDataView).then(
+                response => {
+                    this.permissions = response.data.data.permissions;
+                }
+            );
+        }
+    });
+</script>
+{% endblock %}

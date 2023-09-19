@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Edit job{% endblock %}
+{% block content %}
+
+<b-row align-h="center" class="mt-3">
+    <b-col lg="10">
+        <job-form :job="job"
+                  :job-triggers="jobTriggers"
+                  :available-jobs="availableJobs"
+                  :cancel-to="jobListLink"
+                  :is-update="isUpdate">
+    </b-col>
+</b-row>
+
+{% endblock %}
+
+{% block mixins %}{% endblock %}
+
+{% block javascript %}
+{{ super() }}
+<script type="text/javascript">
+    var app = new Vue({
+        el: "#app",
+        data() {
+            return {
+                jobTriggers: [],
+                availableJobs: [],
+                job: {},
+                jobListLink: this.$frontRoutes.jobsView,
+                isUpdate: true,
+            }
+        },
+        created() {
+            axios.get(this.$apiRoutes.jobCommonDataView).then(
+                response => {
+                    this.jobTriggers = response.data.data.job_triggers;
+                    this.availableJobs = response.data.data.available_jobs;
+                }
+            );
+            let jobId = {{ job_id|tojson }};
+            axios.get(`${this.$apiRoutes.jobView}${jobId}`).then(
+                response => {
+                    this.job = response.data.data;
+                    this.job.kwargs = JSON.stringify(this.job.kwargs);
+                }
+            );
+        }
+    });
+</script>
+{% endblock %}

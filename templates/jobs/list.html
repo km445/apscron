@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Job list{% endblock %}
+{% block content %}
+
+<b-row align-h="center" class="mt-3">
+    <b-col>
+        <b-modal id="delete-item-modal" class="text-center" :title="'Delete'" ok-variant="danger" ok-title="Delete" @ok="deleteJob(deleteJobId)">
+            <p v-text="`Delete ${deleteJobId}?`"></p>
+        </b-modal>
+        <b-row class="text-center">
+            <b-col v-if="userHasAccess($permissions.jobAddView)" cols="12" md="auto">
+                <b-button variant="primary" class="mb-3" :href="$frontRoutes.addJobView">Add job</b-button>
+            </b-col>
+            <b-col>
+                <h5>Job list</h5>
+            </b-col>
+        </b-row>
+        <b-table striped hover responsive :fields="fields" :items="jobs">
+            <template #cell(id)="data">
+                <a v-if="userHasAccess($permissions.jobLogView)" :href="`${logUrl}?job_id=${ data.item.id }`" v-text="data.item.id" target="_blank"></a>
+                <p v-else v-text="data.item.id"></p>
+            </template>
+            <template #cell(action)="data">
+                <b-button v-if="userHasAccess($permissions.jobGetView)" variant="primary" class="mb-1" :href="`${editUrl}${ data.item.id }`">Edit</b-button>
+                <b-button v-if="userHasAccess($permissions.jobDeleteView)" variant="danger" class="mb-1" @click="showDeleteJobModal(data.item.id)">Delete</b-button>
+                <b-button v-if="userHasAccess($permissions.jobPauseView) && data.item.next_run_time" variant="secondary" class="mb-1" @click="pauseJob(data.item.id)">Pause</b-button>
+                <b-button v-if="userHasAccess($permissions.jobPauseView) && !data.item.next_run_time" variant="success" class="mb-1" @click="pauseJob(data.item.id)">Resume</b-button>
+            </template>
+        </b-table>
+    </b-col>
+</b-row>
+
+{% endblock %}
+
+{% block mixins %}{% endblock %}
+
+{% block javascript %}
+{{ super() }}
+<script type="text/javascript">
+    var app = new Vue({
+        el: "#app",
+        data() {
+            return {
+                editUrl: this.$frontRoutes.jobView,
+                pauseUrl: this.$apiRoutes.pauseJobView,
+                logUrl: this.$frontRoutes.jobLogView,
+                fields: ['id', 'name', 'next_run_time', 'kwargs', 'action'],
+                jobs: [],
+                deleteJobId: null,
+            }
+        },
+        created() {
+            axios.get(this.$apiRoutes.jobsView).then(
+                response => {
+                    this.jobs = response.data.data.items;
+                }
+            );
+        },
+        methods: {
+            deleteJob(jobId) {
+                axios.delete(`${this.$apiRoutes.jobView}${jobId}`).then(
+                    response => {
+                        axios.get(this.$apiRoutes.jobsView).then(
+                            response => {
+                                this.jobs = response.data.data.items;
+                            }
+                        );
+                    }
+                );
+            },
+            pauseJob(jobId) {
+                axios.post(`${this.$apiRoutes.pauseJobView}${jobId}`).then(
+                    response => {
+                        axios.get(this.$apiRoutes.jobsView).then(
+                            response => {
+                                this.jobs = response.data.data.items;
+                            }
+                        );
+                    }
+                );
+            },
+            showDeleteJobModal(jobId) {
+                this.deleteJobId = jobId;
+                this.$bvModal.show('delete-item-modal');
+            }
+        }
+    });
+</script>
+{% endblock %}

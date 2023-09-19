@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}User list{% endblock %}
+{% block content %}
+
+<b-row align-h="center" class="mt-3">
+    <b-col>
+        <b-modal id="delete-user-modal" class="text-center" :title="'Delete'" ok-variant="danger" ok-title="Delete" @ok="deleteUser(deleteUserId)">
+            <p align-h="center" v-text="`Delete user ${deleteUserId}?`"></p>
+        </b-modal>
+        <b-row class="text-center">
+            <b-col cols="12" md="auto" v-if="userHasAccess($permissions.userAddView)" >
+                <b-button variant="primary" class="mb-3" :href="$frontRoutes.addUserView">Add user</b-button>
+            </b-col>
+            <b-col><h5>User list</h5></b-col>
+        </b-row>
+        <filter-component :filters="filters" v-on:get-items-with-filters="getItemsWithFilters"> </filter-component>
+        <b-pagination
+            @change="goToPage"
+            v-model="pagination.page"
+            :total-rows="pagination.total_items"
+            :per-page="pagination.per_page"
+        ></b-pagination>
+        <b-table striped hover responsive :fields="fields" :items="users">
+            <template #cell(edit)="data">
+                <b-button v-if="userHasAccess($permissions.userGetView)" variant="primary" class="mb-1" :href="`${editUrl}${ data.item.id }`">Edit</b-button>
+                <b-button v-if="userHasAccess($permissions.userDeleteView)" variant="danger" class="mb-1" @click="showDeleteUserModal(data.item.id)">Delete</b-button>
+            </template>
+        </b-table>
+    </b-col>
+</b-row>
+
+{% endblock %}
+
+{% block mixins %}{% endblock %}
+
+{% block javascript %}
+{{ super() }}
+<script type="text/javascript">
+    var app = new Vue({
+        el: "#app",
+        data() {
+            return {
+                editUrl: this.$frontRoutes.userView,
+                logUrl: this.$frontRoutes.userLogView,
+                fields: ['id', 'username', 'created_at', 'last_login_at', 'ip_list', 'permissions', 'is_admin', 'is_active', 'edit'],
+                users: [],
+                filters: {},
+                pagination: {},
+                deleteUserId: null,
+            }
+        },
+        created() {
+            axios.get(this.$apiRoutes.usersView).then(
+                response => {
+                    this.users = response.data.data.items;
+                    this.filters = response.data.data.filters;
+                    this.pagination = response.data.data.pagination;
+                }
+            );
+        },
+        methods: {
+            async goToPage(pageNumber) {
+                let filters = this.getAdaptedFilters(this.filters);
+                axios.get(
+                    this.$apiRoutes.usersView, {params: {"page": pageNumber, ...filters}}
+                ).then(
+                    response => {
+                        let data = response.data;
+                        this.users = data.data.items;
+                        this.pagination = data.data.pagination;
+                    }
+                )
+            },
+            async getItemsWithFilters(filters) {
+                let adaptedFilters = this.getAdaptedFilters(filters);
+                this.pagination.page = 1;
+                axios.get(
+                    this.$apiRoutes.usersView, {params: {"page": this.pagination.page, ...adaptedFilters}}
+                ).then(
+                    response => {
+                        let data = response.data;
+                        this.users = data.data.items;
+                        this.pagination = data.data.pagination;
+                    }
+                );
+            },
+            deleteUser(userId) {
+                axios.delete(`${this.$apiRoutes.userView}${userId}`).then(
+                    response => {
+                        axios.get(this.$apiRoutes.usersView).then(
+                            response => {
+                                this.users = response.data.data.items;
+                            }
+                        );
+                    }
+                );
+            },
+            showDeleteUserModal(userId) {
+                this.deleteUserId = userId;
+                this.$bvModal.show('delete-user-modal');
+            }
+        },
+    });
+</script>
+{% endblock %}

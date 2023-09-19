@@ -1,0 +1,22 @@
+version: "3.7"
+services:
+  postgresql_apscron_db:
+    image: postgres
+    restart: always
+    container_name: postgresql_apscron_db
+    hostname: postgresql_apscron_db
+    environment:
+      POSTGRES_USER: "apscron"
+      POSTGRES_PASSWORD: "apscron"
+      POSTGRES_DB: "apscron"
+  apscron:
+    build: .
+    container_name: apscron
+    ports:
+      - "8443:443"
+      - "8080:6999"
+    restart: always
+    depends_on:
+      - postgresql_apscron_db
+    links:
+      - postgresql_apscron_db
